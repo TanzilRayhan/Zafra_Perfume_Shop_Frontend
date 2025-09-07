@@ -4,57 +4,15 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { Minus, Plus, X, ShoppingBag, ArrowLeft } from "lucide-react";
 import { useToast } from "@/components/Toast";
-
-interface CartItem {
-  id: string;
-  name: string;
-  price: number;
-  originalPrice: number;
-  image: string;
-  quantity: number;
-  description: string;
-}
-
-const initialCartItems: CartItem[] = [
-  {
-    id: "1",
-    name: "Zafra Classic",
-    price: 89,
-    originalPrice: 120,
-    image:
-      "https://images.unsplash.com/photo-1541643600914-78b084683601?w=200&h=200&fit=crop&crop=center&q=80",
-    quantity: 2,
-    description: "Timeless elegance in every drop",
-  },
-  {
-    id: "2",
-    name: "Zafra Premium",
-    price: 145,
-    originalPrice: 180,
-    image:
-      "https://images.unsplash.com/photo-1588405748880-12d1d2a59d75?w=200&h=200&fit=crop&crop=center&q=80",
-    quantity: 1,
-    description: "Luxury redefined for the modern soul",
-  },
-];
+import { useCart } from "@/contexts/CartContext";
 
 export default function CartPage() {
-  const [cartItems, setCartItems] = useState<CartItem[]>(initialCartItems);
+  const { items: cartItems, updateQuantity, removeFromCart } = useCart();
   const { addToast } = useToast();
 
-  const updateQuantity = (id: string, newQuantity: number) => {
-    if (newQuantity < 1) return;
-
-    setCartItems((items) =>
-      items.map((item) =>
-        item.id === id ? { ...item, quantity: newQuantity } : item
-      )
-    );
-  };
-
-  const removeItem = (id: string) => {
-    setCartItems((items) => items.filter((item) => item.id !== id));
-    addToast("Item removed from cart", "success", 2000);
+  const handleRemoveItem = (id: string, name: string) => {
+    removeFromCart(id);
+    addToast(`${name} removed from cart`, "success", 2000);
   };
 
   const subtotal = cartItems.reduce(
@@ -219,7 +177,7 @@ export default function CartPage() {
 
                       {/* Remove Button */}
                       <button
-                        onClick={() => removeItem(item.id)}
+                        onClick={() => handleRemoveItem(item.id, item.name)}
                         className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full transition-colors"
                       >
                         <X className="w-5 h-5" />

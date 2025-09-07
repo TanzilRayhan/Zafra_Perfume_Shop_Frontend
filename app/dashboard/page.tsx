@@ -211,28 +211,54 @@ export default function DashboardPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Add a small delay to ensure localStorage is available
-    const checkAuth = () => {
-      try {
-        const token = localStorage.getItem("authToken");
-        console.log("Token found:", token); // Debug log
-        if (!token) {
-          router.push("/login");
-        } else {
-          setIsAuthenticated(true);
-        }
-      } catch (error) {
-        console.error("Auth check error:", error);
-        router.push("/login");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    // Small delay to ensure component is mounted
-    const timeoutId = setTimeout(checkAuth, 100);
-    return () => clearTimeout(timeoutId);
+    checkAuthentication();
   }, [router]);
+
+  const checkAuthentication = async () => {
+    try {
+      const token = localStorage.getItem("authToken");
+      console.log("Token found:", token); // Debug log
+
+      if (!token) {
+        router.push("/login");
+        return;
+      }
+
+      // For now, just check if token exists and is not expired
+      // You can add proper token verification later if needed
+      try {
+        // Decode JWT to check expiration (basic check)
+        const tokenParts = token.split(".");
+        if (tokenParts.length === 3) {
+          const payload = JSON.parse(atob(tokenParts[1]));
+          const currentTime = Math.floor(Date.now() / 1000);
+
+          if (payload.exp && payload.exp < currentTime) {
+            throw new Error("Token expired");
+          }
+
+          setIsAuthenticated(true);
+          console.log("User authenticated with payload:", payload);
+        } else {
+          // If not a JWT, just accept the token for now
+          setIsAuthenticated(true);
+          console.log("Token accepted (non-JWT format)");
+        }
+      } catch (tokenError) {
+        console.error("Token validation failed:", tokenError);
+        localStorage.removeItem("authToken");
+        localStorage.removeItem("user");
+        addToast("Session expired. Please log in again.", "warning");
+        router.push("/login");
+        return;
+      }
+    } catch (error) {
+      console.error("Auth check error:", error);
+      router.push("/login");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -370,6 +396,7 @@ export default function DashboardPage() {
 
   const handleLogout = () => {
     localStorage.removeItem("authToken");
+    localStorage.removeItem("user");
     addToast("Logged out successfully!", "success", 2000);
     router.push("/login");
   };

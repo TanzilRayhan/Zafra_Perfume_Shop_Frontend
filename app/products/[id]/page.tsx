@@ -2,7 +2,8 @@
 
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import axios from "axios";
 import {
   Star,
   Heart,
@@ -14,93 +15,120 @@ import {
   Shield,
   RefreshCw,
 } from "lucide-react";
+import { useCart } from "@/contexts/CartContext";
+import { useToast } from "@/components/Toast";
 
-const productData = {
-  "1": {
-    name: "Zafra Classic",
-    price: "$89",
-    originalPrice: "$120",
-    description:
-      "Timeless elegance in every drop. A sophisticated blend that captures the essence of traditional craftsmanship with modern sensibilities.",
-    longDescription:
-      "Zafra Classic is our signature fragrance, carefully crafted with the finest ingredients sourced from around the world. This timeless scent opens with fresh bergamot and citrus notes, develops into a heart of jasmine and rose, and settles into a warm base of sandalwood and vanilla.",
-    rating: 4.8,
-    reviews: 124,
-    inStock: true,
-    ingredients: [
-      "Bergamot",
-      "Jasmine",
-      "Rose",
-      "Sandalwood",
-      "Vanilla",
-      "Musk",
-    ],
-    features: ["Long-lasting", "Unisex", "Cruelty-free", "Natural ingredients"],
-  },
-  "2": {
-    name: "Zafra Premium",
-    price: "$145",
-    originalPrice: "$180",
-    description:
-      "Luxury redefined for the modern soul. An exquisite composition that speaks to those who appreciate the finer things in life.",
-    longDescription:
-      "Zafra Premium represents the pinnacle of luxury fragrance crafting. This sophisticated blend features rare oud wood, complemented by delicate floral notes and finished with a touch of amber.",
-    rating: 4.9,
-    reviews: 89,
-    inStock: true,
-    ingredients: ["Oud Wood", "White Lily", "Amber", "Cedarwood", "Bergamot"],
-    features: [
-      "Premium ingredients",
-      "Limited edition",
-      "Handcrafted",
-      "Gift packaging",
-    ],
-  },
-  "3": {
-    name: "Zafra Luxury",
-    price: "$230",
-    originalPrice: "$280",
-    description:
-      "The pinnacle of olfactory artistry. A masterpiece that defines luxury and sophistication.",
-    longDescription:
-      "Zafra Luxury is our most exclusive offering, featuring rare and precious ingredients that create an unforgettable olfactory experience.",
-    rating: 5.0,
-    reviews: 67,
-    inStock: true,
-    ingredients: [
-      "Rare Saffron",
-      "Bulgarian Rose",
-      "Agarwood",
-      "Frankincense",
-      "Ambergris",
-    ],
-    features: [
-      "Ultra-premium",
-      "Collector's edition",
-      "Certificate of authenticity",
-      "Leather presentation box",
-    ],
-  },
-};
+interface Product {
+  id: string;
+  name: string;
+  price: number;
+  originalPrice: number;
+  description: string;
+  longDescription: string;
+  rating: number;
+  reviews: number;
+  image: string;
+  category: string;
+  brand: string;
+  size: string;
+  availability: string;
+  features: string[];
+  notes: {
+    top: string[];
+    middle: string[];
+    base: string[];
+  };
+}
 
 export default function ProductDetailPage() {
   const params = useParams();
   const { id } = params;
+  const [product, setProduct] = useState<Product | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState("description");
+  const { addToCart } = useCart();
+  const { addToast } = useToast();
 
-  const product = productData[id as keyof typeof productData] || {
-    name: `Zafra Product ${id}`,
-    price: "$89",
-    originalPrice: "$120",
-    description: "A wonderful fragrance experience",
-    longDescription: "This is a detailed description of the product.",
-    rating: 4.5,
-    reviews: 50,
-    inStock: true,
-    ingredients: ["Various natural ingredients"],
-    features: ["High quality", "Long-lasting"],
+  useEffect(() => {
+    if (id) {
+      fetchProduct(id as string);
+    }
+  }, [id]);
+
+  const fetchProduct = async (productId: string) => {
+    try {
+      setLoading(true);
+      const response = await axios.get(`/api/products?id=${productId}`);
+      setProduct(response.data.product);
+      setError(null);
+    } catch (err) {
+      console.error("Error fetching product:", err);
+      setError("Failed to load product details. Please try again later.");
+    } finally {
+      setLoading(false);
+    }
   };
+
+  const discountPercentage = Math.round(
+    (1 - (product?.price || 0) / (product?.originalPrice || 1)) * 100
+  );
+
+  const handleAddToCart = () => {
+    if (!product) return;
+
+    addToCart(
+      {
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        originalPrice: product.originalPrice,
+        image: product.image,
+        description: product.description,
+        category: product.category,
+        brand: product.brand,
+        size: product.size,
+      },
+      quantity
+    );
+
+    addToast(`${quantity} x ${product.name} added to cart!`, "success", 3000);
+  };
+
+  const handleBuyNow = () => {
+    if (!product) return;
+    handleAddToCart();
+    addToast("Redirecting to checkout...", "info", 2000);
+    // You can add redirect to checkout logic here
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-purple-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading product details...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !product) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">{error || "Product not found"}</p>
+          <Link
+            href="/products"
+            className="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition duration-300"
+          >
+            Back to Products
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
@@ -137,10 +165,17 @@ export default function ProductDetailPage() {
           {/* Product Image */}
           <div className="space-y-4">
             <div className="aspect-square bg-gradient-to-br from-purple-100 to-pink-100 rounded-2xl flex items-center justify-center relative overflow-hidden">
-              <div className="w-64 h-64 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full shadow-2xl"></div>
+              <img
+                src={product.image}
+                alt={product.name}
+                className="w-full h-full object-cover rounded-2xl"
+              />
               <button className="absolute top-4 right-4 p-3 bg-white/80 rounded-full hover:bg-white transition-colors duration-200">
                 <Heart className="w-6 h-6 text-gray-600 hover:text-red-500" />
               </button>
+            </div>
+            <div className="text-center text-sm text-gray-600">
+              {product.size} • {product.category}
             </div>
           </div>
 
@@ -174,27 +209,34 @@ export default function ProductDetailPage() {
             {/* Price */}
             <div className="flex items-center space-x-4">
               <span className="text-4xl font-bold text-purple-600">
-                {product.price}
+                ${product.price}
               </span>
               <span className="text-2xl text-gray-500 line-through">
-                {product.originalPrice}
+                ${product.originalPrice}
               </span>
               <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-semibold">
-                Save{" "}
-                {Math.round(
-                  (1 -
-                    parseInt(product.price.replace("$", "")) /
-                      parseInt(product.originalPrice.replace("$", ""))) *
-                    100
-                )}
-                %
+                Save {discountPercentage}%
               </span>
             </div>
 
             {/* Stock Status */}
             <div className="flex items-center space-x-2">
-              <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-              <span className="text-green-700 font-medium">In Stock</span>
+              <div
+                className={`w-3 h-3 rounded-full ${
+                  product.availability === "In Stock"
+                    ? "bg-green-500"
+                    : "bg-red-500"
+                }`}
+              ></div>
+              <span
+                className={`font-medium ${
+                  product.availability === "In Stock"
+                    ? "text-green-700"
+                    : "text-red-700"
+                }`}
+              >
+                {product.availability}
+              </span>
             </div>
 
             {/* Quantity & Add to Cart */}
@@ -219,11 +261,17 @@ export default function ProductDetailPage() {
               </div>
 
               <div className="flex space-x-4">
-                <button className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white py-4 px-6 rounded-xl font-semibold hover:from-purple-700 hover:to-pink-700 transition duration-300 flex items-center justify-center">
+                <button
+                  onClick={handleAddToCart}
+                  className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white py-4 px-6 rounded-xl font-semibold hover:from-purple-700 hover:to-pink-700 transition duration-300 flex items-center justify-center"
+                >
                   <ShoppingCart className="w-5 h-5 mr-2" />
                   Add to Cart
                 </button>
-                <button className="px-6 py-4 border-2 border-purple-600 text-purple-600 rounded-xl hover:bg-purple-600 hover:text-white transition duration-300 font-semibold">
+                <button
+                  onClick={handleBuyNow}
+                  className="px-6 py-4 border-2 border-purple-600 text-purple-600 rounded-xl hover:bg-purple-600 hover:text-white transition duration-300 font-semibold"
+                >
                   Buy Now
                 </button>
               </div>
@@ -251,17 +299,21 @@ export default function ProductDetailPage() {
         <div className="mt-16">
           <div className="border-b border-gray-200">
             <nav className="flex space-x-8">
-              {["description", "ingredients", "features"].map((tab) => (
+              {[
+                { key: "description", label: "Description" },
+                { key: "ingredients", label: "Notes" },
+                { key: "features", label: "Features" },
+              ].map((tab) => (
                 <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  className={`py-4 px-1 border-b-2 font-medium text-sm capitalize ${
-                    activeTab === tab
+                  key={tab.key}
+                  onClick={() => setActiveTab(tab.key)}
+                  className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                    activeTab === tab.key
                       ? "border-purple-600 text-purple-600"
                       : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                   }`}
                 >
-                  {tab}
+                  {tab.label}
                 </button>
               ))}
             </nav>
@@ -277,18 +329,53 @@ export default function ProductDetailPage() {
             )}
             {activeTab === "ingredients" && (
               <div>
-                <h3 className="text-xl font-bold mb-4">Key Ingredients</h3>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                  {product.ingredients.map((ingredient, index) => (
-                    <div
-                      key={index}
-                      className="bg-purple-50 p-4 rounded-xl text-center"
-                    >
-                      <span className="font-medium text-purple-900">
-                        {ingredient}
-                      </span>
+                <h3 className="text-xl font-bold mb-4">Fragrance Notes</h3>
+                <div className="space-y-6">
+                  <div>
+                    <h4 className="font-semibold text-purple-600 mb-2">
+                      Top Notes
+                    </h4>
+                    <div className="flex flex-wrap gap-2">
+                      {product.notes.top.map((note, index) => (
+                        <span
+                          key={index}
+                          className="bg-purple-50 text-purple-800 px-3 py-1 rounded-full text-sm"
+                        >
+                          {note}
+                        </span>
+                      ))}
                     </div>
-                  ))}
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-pink-600 mb-2">
+                      Middle Notes
+                    </h4>
+                    <div className="flex flex-wrap gap-2">
+                      {product.notes.middle.map((note, index) => (
+                        <span
+                          key={index}
+                          className="bg-pink-50 text-pink-800 px-3 py-1 rounded-full text-sm"
+                        >
+                          {note}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-blue-600 mb-2">
+                      Base Notes
+                    </h4>
+                    <div className="flex flex-wrap gap-2">
+                      {product.notes.base.map((note, index) => (
+                        <span
+                          key={index}
+                          className="bg-blue-50 text-blue-800 px-3 py-1 rounded-full text-sm"
+                        >
+                          {note}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </div>
             )}

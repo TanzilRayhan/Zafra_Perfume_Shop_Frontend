@@ -1,11 +1,58 @@
 "use client";
 
 import Link from "next/link";
-import React, { useState } from "react";
-import { Menu, X, ShoppingBag, User, Search } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Menu, X, ShoppingBag, User, Search, LogOut } from "lucide-react";
+import { useCart } from "@/contexts/CartContext";
+import { useRouter } from "next/navigation";
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [user, setUser] = useState<any>(null);
+  const { getTotalItems } = useCart();
+  const totalItems = getTotalItems();
+  const router = useRouter();
+
+  // Check authentication status on component mount
+  useEffect(() => {
+    const checkAuth = () => {
+      const token = localStorage.getItem("authToken");
+      const userData = localStorage.getItem("user");
+
+      if (token) {
+        setIsAuthenticated(true);
+        if (userData) {
+          try {
+            setUser(JSON.parse(userData));
+          } catch (error) {
+            console.error("Error parsing user data:", error);
+          }
+        }
+      } else {
+        setIsAuthenticated(false);
+        setUser(null);
+      }
+    };
+
+    checkAuth();
+
+    // Listen for storage changes (when user logs in/out in another tab)
+    window.addEventListener("storage", checkAuth);
+
+    return () => {
+      window.removeEventListener("storage", checkAuth);
+    };
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("authToken");
+    localStorage.removeItem("user");
+    setIsAuthenticated(false);
+    setUser(null);
+    setIsMenuOpen(false);
+    router.push("/");
+  };
 
   return (
     <header className="bg-white/95 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-50">
@@ -53,24 +100,56 @@ export default function Header() {
             </button>
             <Link
               href="/cart"
-              className="p-2 text-gray-700 hover:text-purple-600 transition-colors duration-200"
+              className="p-2 text-gray-700 hover:text-purple-600 transition-colors duration-200 relative"
             >
               <ShoppingBag className="w-5 h-5" />
+              {totalItems > 0 && (
+                <span className="absolute -top-1 -right-1 bg-purple-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-medium">
+                  {totalItems > 99 ? "99+" : totalItems}
+                </span>
+              )}
             </Link>
-            <div className="flex items-center space-x-2">
-              <Link
-                href="/login"
-                className="px-4 py-2 text-gray-700 hover:text-purple-600 font-medium transition-colors duration-200"
-              >
-                Login
-              </Link>
-              <Link
-                href="/admin/register"
-                className="px-6 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-full hover:from-purple-700 hover:to-pink-700 transition duration-300 transform hover:scale-105"
-              >
-                Register
-              </Link>
-            </div>
+            {/* Conditional Authentication */}
+            {isAuthenticated ? (
+              <div className="flex items-center space-x-2">
+                <Link
+                  href="/dashboard"
+                  className="px-4 py-2 text-gray-700 hover:text-purple-600 font-medium transition-colors duration-200"
+                >
+                  Dashboard
+                </Link>
+                <div className="flex items-center space-x-2">
+                  <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full flex items-center justify-center">
+                    <User className="w-4 h-4 text-white" />
+                  </div>
+                  <span className="text-sm text-gray-700 font-medium">
+                    {user?.name || user?.email || "User"}
+                  </span>
+                </div>
+                <button
+                  onClick={handleLogout}
+                  className="p-2 text-gray-700 hover:text-red-600 transition-colors duration-200"
+                  title="Logout"
+                >
+                  <LogOut className="w-5 h-5" />
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center space-x-2">
+                <Link
+                  href="/login"
+                  className="px-4 py-2 text-gray-700 hover:text-purple-600 font-medium transition-colors duration-200"
+                >
+                  Login
+                </Link>
+                <Link
+                  href="/admin/register"
+                  className="px-6 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-full hover:from-purple-700 hover:to-pink-700 transition duration-300 transform hover:scale-105"
+                >
+                  Register
+                </Link>
+              </div>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -119,20 +198,48 @@ export default function Header() {
                 Contact
               </Link>
               <div className="flex flex-col space-y-3 pt-4 border-t border-gray-200">
-                <Link
-                  href="/login"
-                  className="text-gray-700 hover:text-purple-600 font-medium py-2"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Login
-                </Link>
-                <Link
-                  href="/admin/register"
-                  className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-full hover:from-purple-700 hover:to-pink-700 transition duration-300 text-center"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Register
-                </Link>
+                {isAuthenticated ? (
+                  <>
+                    <Link
+                      href="/dashboard"
+                      className="text-gray-700 hover:text-purple-600 font-medium py-2"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      Dashboard
+                    </Link>
+                    <div className="flex items-center space-x-2 py-2">
+                      <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full flex items-center justify-center">
+                        <User className="w-4 h-4 text-white" />
+                      </div>
+                      <span className="text-sm text-gray-700 font-medium">
+                        {user?.name || user?.email || "User"}
+                      </span>
+                    </div>
+                    <button
+                      onClick={handleLogout}
+                      className="text-left text-red-600 hover:text-red-800 font-medium py-2"
+                    >
+                      Logout
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <Link
+                      href="/login"
+                      className="text-gray-700 hover:text-purple-600 font-medium py-2"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      Login
+                    </Link>
+                    <Link
+                      href="/admin/register"
+                      className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-full hover:from-purple-700 hover:to-pink-700 transition duration-300 text-center"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      Register
+                    </Link>
+                  </>
+                )}
               </div>
             </div>
           </div>

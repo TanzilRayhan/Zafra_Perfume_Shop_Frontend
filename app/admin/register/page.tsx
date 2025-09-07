@@ -5,7 +5,15 @@ import { useForm, SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import axios from "axios";
-import { Mail, Lock, User, Eye, EyeOff } from "lucide-react";
+import {
+  Mail,
+  Lock,
+  User,
+  Eye,
+  EyeOff,
+  ChevronDown,
+  UserCheck,
+} from "lucide-react";
 import { useToast } from "@/components/Toast";
 
 // Zod schema for registration validation with password confirmation
@@ -15,7 +23,7 @@ const registerSchema = z
       .string()
       .min(2, "Name must be at least 2 characters long")
       .regex(/^[a-zA-Z\s'-]+$/, "Name must contain only letters and spaces"),
-    email: z.string().email("Invalid email address"),
+    email: z.string().email({ message: "Invalid email address" }),
     password: z
       .string()
       .min(8, "Password must be at least 8 characters long")
@@ -23,6 +31,9 @@ const registerSchema = z
       .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
       .regex(/[0-9]/, "Password must contain at least one number"),
     confirmPassword: z.string(),
+    role: z.enum(["admin", "user", "manager"], {
+      message: "Please select a role",
+    }),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords do not match",
@@ -83,6 +94,53 @@ const InputField: React.FC<InputFieldProps> = ({
   );
 };
 
+interface RoleSelectProps {
+  id: string;
+  register: any;
+  icon: React.ReactNode;
+}
+
+const RoleSelect: React.FC<RoleSelectProps> = ({ id, register, icon }) => {
+  const roles = [
+    { value: "user", label: "User", description: "Regular customer access" },
+    {
+      value: "admin",
+      label: "Administrator",
+      description: "Full system access",
+    },
+    {
+      value: "manager",
+      label: "Manager",
+      description: "Product & order management",
+    },
+  ];
+
+  return (
+    <div className="relative">
+      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400">
+        {icon}
+      </div>
+      <select
+        id={id}
+        {...register}
+        className="w-full pl-12 pr-10 py-4 rounded-xl border-2 bg-white/50 backdrop-blur-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 border-gray-200 hover:border-gray-300 appearance-none cursor-pointer"
+      >
+        <option value="" disabled>
+          Select your role
+        </option>
+        {roles.map((role) => (
+          <option key={role.value} value={role.value}>
+            {role.label} - {role.description}
+          </option>
+        ))}
+      </select>
+      <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-gray-400">
+        <ChevronDown size={20} />
+      </div>
+    </div>
+  );
+};
+
 // --- Main Registration Page Component ---
 
 export default function RegisterPage() {
@@ -115,11 +173,15 @@ export default function RegisterPage() {
         3000
       );
     }
+    if (errors.role) {
+      addToast(errors.role.message || "Please select a role", "error", 3000);
+    }
   }, [errors, addToast]);
 
   const onSubmit: SubmitHandler<RegisterFormValues> = async (data) => {
     try {
       const { confirmPassword, ...payload } = data; // Exclude confirmPassword from the payload
+
       const response = await axios.post(
         "http://localhost:8000/admin/auth/register",
         payload
@@ -130,6 +192,7 @@ export default function RegisterPage() {
     } catch (error: any) {
       console.error("Registration failed:", error);
       const errorMessage =
+        error.response?.data?.error ||
         error.response?.data?.message ||
         "Registration failed. Please try again.";
       addToast(errorMessage, "error");
@@ -173,6 +236,11 @@ export default function RegisterPage() {
               placeholder="Email Address"
               register={register("email")}
               icon={<Mail size={20} />}
+            />
+            <RoleSelect
+              id="role"
+              register={register("role")}
+              icon={<UserCheck size={20} />}
             />
             <InputField
               id="password"

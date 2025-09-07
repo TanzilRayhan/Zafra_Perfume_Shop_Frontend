@@ -1,31 +1,31 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Star, Shield, Truck, Heart } from "lucide-react";
+import {
+  ArrowRight,
+  Star,
+  Shield,
+  Truck,
+  Heart,
+  ShoppingCart,
+} from "lucide-react";
+import { useState, useEffect } from "react";
+import axios from "axios";
+import { useCart } from "@/contexts/CartContext";
+import { useToast } from "@/components/Toast";
 
-const featuredProducts = [
-  {
-    id: 1,
-    name: "Zafra Classic",
-    price: "$89",
-    image: "/api/placeholder/300/300",
-    description: "Timeless elegance in every drop",
-  },
-  {
-    id: 2,
-    name: "Zafra Premium",
-    price: "$145",
-    image: "/api/placeholder/300/300",
-    description: "Luxury redefined for the modern soul",
-  },
-  {
-    id: 3,
-    name: "Zafra Luxury",
-    price: "$230",
-    image: "/api/placeholder/300/300",
-    description: "The pinnacle of olfactory artistry",
-  },
-];
+interface Product {
+  id: string;
+  name: string;
+  price: number;
+  originalPrice: number;
+  description: string;
+  rating: number;
+  reviews: number;
+  image: string;
+  category: string;
+  availability: string;
+}
 
 const features = [
   {
@@ -46,6 +46,81 @@ const features = [
 ];
 
 export default function Home() {
+  const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { addToCart } = useCart();
+  const { addToast } = useToast();
+
+  useEffect(() => {
+    fetchFeaturedProducts();
+  }, []);
+
+  const fetchFeaturedProducts = async () => {
+    try {
+      const response = await axios.get("/api/products?featured=true");
+      setFeaturedProducts(response.data.products);
+    } catch (error) {
+      console.error("Error fetching featured products:", error);
+      // Fallback to static data if API fails
+      setFeaturedProducts([
+        {
+          id: "1",
+          name: "Zafra Classic",
+          price: 89,
+          originalPrice: 120,
+          description: "Timeless elegance in every drop",
+          rating: 4.8,
+          reviews: 124,
+          image:
+            "https://images.unsplash.com/photo-1541643600914-78b084683601?w=400&h=300&fit=crop&crop=center&q=80",
+          category: "Classic",
+          availability: "In Stock",
+        },
+        {
+          id: "2",
+          name: "Zafra Premium",
+          price: 145,
+          originalPrice: 180,
+          description: "Luxury redefined for the modern soul",
+          rating: 4.9,
+          reviews: 89,
+          image:
+            "https://images.unsplash.com/photo-1594035910387-fea47794261f?w=400&h=300&fit=crop&crop=center&q=80",
+          category: "Premium",
+          availability: "In Stock",
+        },
+        {
+          id: "3",
+          name: "Zafra Luxury",
+          price: 230,
+          originalPrice: 280,
+          description: "The pinnacle of olfactory artistry",
+          rating: 5.0,
+          reviews: 67,
+          image:
+            "https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?w=400&h=300&fit=crop&crop=center&q=80",
+          category: "Luxury",
+          availability: "Limited Edition",
+        },
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddToCart = (product: Product) => {
+    addToCart({
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      originalPrice: product.originalPrice,
+      image: product.image,
+      description: product.description,
+      category: product.category,
+    });
+    addToast(`${product.name} added to cart!`, "success", 3000);
+  };
+
   return (
     <div className="bg-gradient-to-br from-purple-50 to-pink-50 min-h-screen">
       {/* Background Decoration */}
@@ -94,49 +169,75 @@ export default function Home() {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {featuredProducts.map((product) => (
-                <div
-                  key={product.id}
-                  className="bg-white/60 backdrop-blur-sm rounded-2xl shadow-xl overflow-hidden hover:shadow-2xl transition duration-300 transform hover:-translate-y-2 border border-white/20"
-                >
-                  <div className="h-64 overflow-hidden">
-                    <img
-                      src={`https://images.unsplash.com/photo-1541643600914-78b084683601?w=400&h=300&fit=crop&crop=center&q=80`}
-                      alt={product.name}
-                      className="w-full h-full object-cover hover:scale-110 transition-transform duration-300"
-                    />
-                  </div>
-                  <div className="p-6">
-                    <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                      {product.name}
-                    </h3>
-                    <p className="text-gray-600 mb-4">{product.description}</p>
-                    <div className="flex items-center justify-between">
-                      <span className="text-3xl font-bold text-purple-600">
-                        {product.price}
-                      </span>
-                      <div className="flex items-center">
-                        {[...Array(5)].map((_, i) => (
-                          <Star
-                            key={i}
-                            className="w-5 h-5 text-yellow-400 fill-current"
-                          />
-                        ))}
-                        <span className="ml-2 text-gray-600">(4.9)</span>
+            {loading ? (
+              <div className="text-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+                <p className="text-gray-600">Loading featured products...</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {featuredProducts.map((product) => (
+                  <div
+                    key={product.id}
+                    className="bg-white/60 backdrop-blur-sm rounded-2xl shadow-xl overflow-hidden hover:shadow-2xl transition duration-300 transform hover:-translate-y-2 border border-white/20"
+                  >
+                    <div className="h-64 overflow-hidden">
+                      <img
+                        src={product.image}
+                        alt={product.name}
+                        className="w-full h-full object-cover hover:scale-110 transition-transform duration-300"
+                      />
+                    </div>
+                    <div className="p-6">
+                      <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                        {product.name}
+                      </h3>
+                      <p className="text-gray-600 mb-4">
+                        {product.description}
+                      </p>
+                      <div className="flex items-center justify-between mb-4">
+                        <span className="text-3xl font-bold text-purple-600">
+                          ${product.price}
+                        </span>
+                        <div className="flex items-center">
+                          {[...Array(5)].map((_, i) => (
+                            <Star
+                              key={i}
+                              className={`w-5 h-5 ${
+                                i < Math.floor(product.rating)
+                                  ? "text-yellow-400 fill-current"
+                                  : "text-gray-300"
+                              }`}
+                            />
+                          ))}
+                          <span className="ml-2 text-gray-600">
+                            ({product.rating})
+                          </span>
+                        </div>
+                      </div>
+                      <div className="text-sm text-gray-600 mb-4">
+                        {product.availability}
+                      </div>
+                      <div className="flex space-x-2">
+                        <Link
+                          href={`/products/${product.id}`}
+                          className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 rounded-xl font-semibold hover:from-purple-700 hover:to-pink-700 transition duration-300 flex items-center justify-center transform hover:scale-[1.02]"
+                        >
+                          View Details
+                          <ArrowRight className="ml-2 h-4 w-4" />
+                        </Link>
+                        <button
+                          onClick={() => handleAddToCart(product)}
+                          className="px-4 py-3 border-2 border-purple-600 text-purple-600 rounded-xl hover:bg-purple-600 hover:text-white transition duration-300"
+                        >
+                          <ShoppingCart className="w-5 h-5" />
+                        </button>
                       </div>
                     </div>
-                    <Link
-                      href={`/products/${product.id}`}
-                      className="mt-4 w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 rounded-xl font-semibold hover:from-purple-700 hover:to-pink-700 transition duration-300 flex items-center justify-center transform hover:scale-[1.02]"
-                    >
-                      View Details
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </Link>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         </section>
 

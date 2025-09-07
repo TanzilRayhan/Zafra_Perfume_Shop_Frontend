@@ -100,46 +100,39 @@ export default function LoginPage() {
 
   const onSubmit: SubmitHandler<LoginFormValues> = async (data) => {
     try {
-      // For demo purposes, if no backend API, create a dummy token
-      let authToken = "demo_auth_token_12345";
+      const response = await axios.post(
+        "http://localhost:8000/admin/auth/login",
+        data
+      );
+      console.log("Login successful:", response.data);
 
-      try {
-        const response = await axios.post(
-          "http://localhost:8000/admin/auth/login",
-          data
+      // Check for both 'token' and 'access_token' from backend
+      const authToken = response.data.token || response.data.access_token;
+
+      if (authToken) {
+        // Store auth token and user data
+        localStorage.setItem("authToken", authToken);
+        localStorage.setItem(
+          "user",
+          JSON.stringify(response.data.user || { email: data.email })
         );
-        console.log("Login successful:", response.data);
 
-        if (response.data.token) {
-          authToken = response.data.token;
-        }
-      } catch (apiError) {
-        console.log("API not available, using demo login");
-        // For demo purposes, accept any email/password combination
-        if (data.email && data.password) {
-          console.log("Demo login accepted");
-        } else {
-          addToast("Please enter both email and password", "error");
-          return;
-        }
+        addToast("Login successful! Redirecting...", "success", 2000);
+
+        // Redirect to dashboard after a short delay
+        setTimeout(() => {
+          router.push("/dashboard");
+        }, 1500);
+      } else {
+        addToast("Login failed. No token received.", "error");
       }
-
-      // Store auth token
-      localStorage.setItem("authToken", authToken);
-      console.log("Token stored:", authToken);
-
-      addToast("Login successful! Redirecting...", "success", 2000);
-
-      // Redirect to dashboard after a short delay
-      setTimeout(() => {
-        router.push("/dashboard");
-      }, 1500);
     } catch (error: any) {
       console.error("Login failed:", error);
       const errorMessage =
-        error.message ||
+        error.response?.data?.error ||
         error.response?.data?.message ||
-        "Login failed. Please check your credentials.";
+        "Invalid email or password. Please check your credentials.";
+
       addToast(errorMessage, "error");
     }
   };
@@ -223,10 +216,10 @@ export default function LoginPage() {
             </p>
           </div>
 
-          {/* Demo Login Info */}
+          {/* Backend Info */}
           <div className="mt-6 p-4 bg-blue-50 rounded-xl border border-blue-200">
             <p className="text-sm text-blue-800 text-center">
-              <strong>Demo:</strong> Use any email/password to login
+              <strong>Using Backend:</strong> http://localhost:8000/admin/
             </p>
           </div>
         </div>

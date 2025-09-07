@@ -2,77 +2,99 @@
 
 import Link from "next/link";
 import { Star, ShoppingCart, Heart } from "lucide-react";
+import { useState, useEffect } from "react";
+import axios from "axios";
+import { useCart } from "@/contexts/CartContext";
+import { useToast } from "@/components/Toast";
 
-const products = [
-  {
-    id: "1",
-    name: "Zafra Classic",
-    price: "$89",
-    originalPrice: "$120",
-    description: "Timeless elegance in every drop",
-    rating: 4.8,
-    reviews: 124,
-    image:
-      "https://images.unsplash.com/photo-1541643600914-78b084683601?w=400&h=300&fit=crop&crop=center&q=80",
-  },
-  {
-    id: "2",
-    name: "Zafra Premium",
-    price: "$145",
-    originalPrice: "$180",
-    description: "Luxury redefined for the modern soul",
-    rating: 4.9,
-    reviews: 89,
-    image:
-      "https://images.unsplash.com/photo-1588405748880-12d1d2a59d75?w=400&h=300&fit=crop&crop=center&q=80",
-  },
-  {
-    id: "3",
-    name: "Zafra Luxury",
-    price: "$230",
-    originalPrice: "$280",
-    description: "The pinnacle of olfactory artistry",
-    rating: 5.0,
-    reviews: 67,
-    image:
-      "https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?w=400&h=300&fit=crop&crop=center&q=80",
-  },
-  {
-    id: "4",
-    name: "Zafra Essence",
-    price: "$65",
-    originalPrice: "$85",
-    description: "Pure essence of sophistication",
-    rating: 4.7,
-    reviews: 156,
-    image:
-      "https://images.unsplash.com/photo-1595425970377-c9703cf48b6d?w=400&h=300&fit=crop&crop=center&q=80",
-  },
-  {
-    id: "5",
-    name: "Zafra Royal",
-    price: "$195",
-    originalPrice: "$240",
-    description: "Fit for royalty, crafted for you",
-    rating: 4.9,
-    reviews: 93,
-    image:
-      "https://images.unsplash.com/photo-1563170351-be82bc888aa4?w=400&h=300&fit=crop&crop=center&q=80",
-  },
-  {
-    id: "6",
-    name: "Zafra Noir",
-    price: "$175",
-    originalPrice: "$220",
-    description: "Mystery and allure in perfect harmony",
-    rating: 4.8,
-    reviews: 78,
-    image:
-      "https://images.unsplash.com/photo-1594035910387-fea47794261f?w=400&h=300&fit=crop&crop=center&q=80",
-  },
-];
+interface Product {
+  id: string;
+  name: string;
+  price: number;
+  originalPrice: number;
+  description: string;
+  longDescription: string;
+  rating: number;
+  reviews: number;
+  image: string;
+  category: string;
+  brand: string;
+  size: string;
+  availability: string;
+  features: string[];
+  notes: {
+    top: string[];
+    middle: string[];
+    base: string[];
+  };
+}
 
 export default function ProductsPage() {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const { addToCart } = useCart();
+  const { addToast } = useToast();
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const fetchProducts = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get("/api/products");
+      setProducts(response.data.products);
+      setError(null);
+    } catch (err) {
+      console.error("Error fetching products:", err);
+      setError("Failed to load products. Please try again later.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddToCart = (product: Product) => {
+    addToCart({
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      originalPrice: product.originalPrice,
+      image: product.image,
+      description: product.description,
+      category: product.category,
+      brand: product.brand,
+      size: product.size,
+    });
+    addToast(`${product.name} added to cart!`, "success", 3000);
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-purple-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading products...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">{error}</p>
+          <button
+            onClick={fetchProducts}
+            className="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition duration-300"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50">
       {/* Background Decoration */}
@@ -117,10 +139,7 @@ export default function ProductsPage() {
                   <div className="absolute top-4 left-4 bg-purple-600 text-white px-3 py-1 rounded-full text-sm font-semibold">
                     Save{" "}
                     {Math.round(
-                      (1 -
-                        parseInt(product.price.replace("$", "")) /
-                          parseInt(product.originalPrice.replace("$", ""))) *
-                        100
+                      (1 - product.price / product.originalPrice) * 100
                     )}
                     %
                   </div>
@@ -156,11 +175,14 @@ export default function ProductsPage() {
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center space-x-2">
                       <span className="text-2xl font-bold text-purple-600">
-                        {product.price}
+                        ${product.price}
                       </span>
                       <span className="text-lg text-gray-500 line-through">
-                        {product.originalPrice}
+                        ${product.originalPrice}
                       </span>
+                    </div>
+                    <div className="text-sm text-gray-600">
+                      {product.availability}
                     </div>
                   </div>
 
@@ -172,7 +194,10 @@ export default function ProductsPage() {
                     >
                       View Details
                     </Link>
-                    <button className="px-4 py-3 border-2 border-purple-600 text-purple-600 rounded-xl hover:bg-purple-600 hover:text-white transition duration-300">
+                    <button
+                      onClick={() => handleAddToCart(product)}
+                      className="px-4 py-3 border-2 border-purple-600 text-purple-600 rounded-xl hover:bg-purple-600 hover:text-white transition duration-300"
+                    >
                       <ShoppingCart className="w-5 h-5" />
                     </button>
                   </div>
