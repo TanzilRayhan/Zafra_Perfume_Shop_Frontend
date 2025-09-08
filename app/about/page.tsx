@@ -30,18 +30,6 @@ const values = [
   },
 ];
 
-const milestones = [
-  {
-    year: "2010",
-    event: "Zafra founded with a vision to redefine luxury fragrance",
-  },
-  { year: "2015", event: "Launched our first signature collection" },
-  { year: "2018", event: "Expanded internationally to 15 countries" },
-  { year: "2020", event: "Introduced eco-friendly packaging initiative" },
-  { year: "2023", event: "Reached 1 million satisfied customers worldwide" },
-  { year: "2024", event: "Launched premium artisan collection" },
-];
-
 export default function AboutPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50">
@@ -54,7 +42,7 @@ export default function AboutPage() {
 
       <div className="relative z-10">
         {/* Hero Section */}
-        <section className="py-24">
+        <section className="py-16">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
               About Zafra
@@ -143,36 +131,6 @@ export default function AboutPage() {
           </div>
         </section>
 
-        {/* Timeline Section */}
-        <section className="py-20">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-16">
-              <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-                Our Journey
-              </h2>
-              <p className="text-xl text-gray-600">
-                Key milestones that shaped Zafra into what it is today
-              </p>
-            </div>
-
-            <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-8 border border-white/20 shadow-xl">
-              <div className="space-y-8">
-                {milestones.map((milestone, index) => (
-                  <div key={index} className="flex items-start space-x-4">
-                    <div className="bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-full w-16 h-16 flex items-center justify-center font-bold text-sm">
-                      {milestone.year}
-                    </div>
-                    <div className="flex-1 pt-3">
-                      <p className="text-lg text-gray-700 font-medium">
-                        {milestone.event}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
 
         {/* CTA Section */}
         <section className="py-20">

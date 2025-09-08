@@ -130,7 +130,7 @@ export default function ContactPage() {
 
       <div className="relative z-10">
         {/* Hero Section */}
-        <section className="py-24">
+        <section className="py-16">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
               Get in Touch
@@ -143,33 +143,10 @@ export default function ContactPage() {
           </div>
         </section>
 
-        {/* Contact Info Cards */}
-        <section className="py-16">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
-              {contactInfo.map((info, index) => (
-                <div
-                  key={index}
-                  className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 border border-white/20 shadow-lg text-center hover:shadow-xl transition duration-300"
-                >
-                  <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <info.icon className="w-8 h-8 text-white" />
-                  </div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">
-                    {info.title}
-                  </h3>
-                  <p className="text-gray-800 font-medium mb-2">
-                    {info.details}
-                  </p>
-                  <p className="text-gray-600 text-sm">{info.description}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
+        
 
         {/* Contact Form & Map Section */}
-        <section className="py-16">
+        <section className="pb-16">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
               {/* Contact Form */}

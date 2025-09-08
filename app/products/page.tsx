@@ -208,28 +208,7 @@ export default function ProductsPage() {
         </div>
 
         {/* Newsletter Section */}
-        <div className="py-16">
-          <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
-            <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-12 border border-white/20 shadow-xl">
-              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-                Stay Updated
-              </h2>
-              <p className="text-xl text-gray-600 mb-8">
-                Get notified about new arrivals and exclusive offers
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
-                <input
-                  type="email"
-                  placeholder="Enter your email"
-                  className="flex-1 px-6 py-3 rounded-xl border-2 border-gray-200 bg-white/50 backdrop-blur-sm focus:ring-2 focus:ring-purple-400 focus:border-transparent focus:outline-none transition-all duration-200"
-                />
-                <button className="px-8 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-xl hover:from-purple-700 hover:to-pink-700 transition duration-300 transform hover:scale-105 shadow-lg">
-                  Subscribe
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+       
       </div>
 
       <style jsx global>{`

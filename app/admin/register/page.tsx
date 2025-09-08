@@ -16,7 +16,6 @@ import {
 } from "lucide-react";
 import { useToast } from "@/components/Toast";
 
-// Zod schema for registration validation with password confirmation
 const registerSchema = z
   .object({
     name: z
@@ -31,25 +30,23 @@ const registerSchema = z
       .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
       .regex(/[0-9]/, "Password must contain at least one number"),
     confirmPassword: z.string(),
-    role: z.enum(["admin", "user", "manager"], {
+    role: z.enum(["admin", "customer", "manager"], {
       message: "Please select a role",
     }),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords do not match",
-    path: ["confirmPassword"], // path of error
+    path: ["confirmPassword"], 
   });
 
-// Infer the TypeScript type from the Zod schema
 type RegisterFormValues = z.infer<typeof registerSchema>;
 
-// --- Reusable Components (within this file) ---
 
 interface InputFieldProps {
   id: string;
   type: "text" | "email" | "password";
   placeholder: string;
-  register: any; // from react-hook-form
+  register: any; 
   icon: React.ReactNode;
 }
 
@@ -102,7 +99,11 @@ interface RoleSelectProps {
 
 const RoleSelect: React.FC<RoleSelectProps> = ({ id, register, icon }) => {
   const roles = [
-    { value: "user", label: "User", description: "Regular customer access" },
+    {
+      value: "customer",
+      label: "Customer",
+      description: "Regular customer access",
+    },
     {
       value: "admin",
       label: "Administrator",
@@ -141,7 +142,6 @@ const RoleSelect: React.FC<RoleSelectProps> = ({ id, register, icon }) => {
   );
 };
 
-// --- Main Registration Page Component ---
 
 export default function RegisterPage() {
   const { addToast } = useToast();
@@ -155,7 +155,6 @@ export default function RegisterPage() {
     resolver: zodResolver(registerSchema),
   });
 
-  // Show validation errors as toast notifications
   useEffect(() => {
     if (errors.name) {
       addToast(errors.name.message || "Invalid name", "error", 3000);
@@ -180,7 +179,7 @@ export default function RegisterPage() {
 
   const onSubmit: SubmitHandler<RegisterFormValues> = async (data) => {
     try {
-      const { confirmPassword, ...payload } = data; // Exclude confirmPassword from the payload
+      const { confirmPassword, ...payload } = data;
 
       const response = await axios.post(
         "http://localhost:8000/admin/auth/register",
@@ -201,7 +200,6 @@ export default function RegisterPage() {
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 flex items-center justify-center p-4">
-      {/* Background Decoration */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-purple-200 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob"></div>
         <div className="absolute top-1/3 right-1/4 w-64 h-64 bg-pink-200 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-2000"></div>

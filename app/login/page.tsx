@@ -216,12 +216,6 @@ export default function LoginPage() {
             </p>
           </div>
 
-          {/* Backend Info */}
-          <div className="mt-6 p-4 bg-blue-50 rounded-xl border border-blue-200">
-            <p className="text-sm text-blue-800 text-center">
-              <strong>Using Backend:</strong> http://localhost:8000/admin/
-            </p>
-          </div>
         </div>
       </div>
 
